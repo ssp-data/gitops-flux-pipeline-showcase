@@ -44,7 +44,7 @@ watch:
 	flux get kustomizations --watch
 
 port-forward-kestra: ## Port forward Kestra UI to localhost:8080
-	kubectl port-forward svc/kestra-service 8080:8080 -n flux-system
+	kubectl port-forward service/kestra-service 8082:8080 -n flux-system
 
 flux-boostrap: # check on https://fluxcd.io/flux/get-started/
 	flux bootstrap github \
