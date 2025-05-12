@@ -1,0 +1,29 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kestra
+  namespace: flux-system
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: kestra
+      version: '>0.0.0'
+      sourceRef:
+        kind: HelmRepository
+        name: kestra
+        namespace: flux-system
+  valuesFrom:
+    - kind: ConfigMap
+      name: kestra-values
+      valuesKey: values.yaml
+  # You can also specify values directly here if you prefer
+  # values:
+  #   deployments:
+  #     standalone:
+  #       enabled: true
+  #   postgresql:
+  #     enabled: true
+  #   minio:
+  #     enabled: true
