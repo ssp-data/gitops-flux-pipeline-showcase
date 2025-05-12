@@ -37,14 +37,14 @@ spec:
     minio:
       enabled: true
     dind:
-      enabled: true
       image:
-        image: docker
         tag: dind
       args:
         - --log-level=fatal
-      # Add security context to run as root
       securityContext:
         runAsUser: 0
         runAsGroup: 0
-        privileged: true
+
+    securityContext:
+      runAsUser: 0
+      runAsGroup: 0
