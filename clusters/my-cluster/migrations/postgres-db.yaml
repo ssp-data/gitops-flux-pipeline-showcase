@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: liquibase-scripts
+  namespace: flux-system
+data:
+  run-migrations.sh: |
+    #!/bin/bash
+    set -e
+    echo "Starting database migrations..."
+    cd /migrations
+    liquibase update
+    echo "Database migrations completed successfully!"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-credentials
+  namespace: flux-system
+type: Opaque
+data:
+  username: cG9zdGdyZXM=  # postgres
+  password: cG9zdGdyZXM=  # postgres
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: liquibase-migration
+  namespace: flux-system
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: check-db-ready
+          image: postgres:14
+          command: ['sh', '-c', 
+            'until pg_isready -h postgres -p 5432; 
+            do echo "waiting for database"; sleep 2; done;']
+      containers:
+        - name: liquibase
+          image: liquibase/liquibase:4.20
+          command: ["/bin/sh", "/scripts/run-migrations.sh"]
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+          volumeMounts:
+            - name: liquibase-scripts
+              mountPath: /scripts
+            - name: migrations-volume
+              mountPath: /migrations
+      volumes:
+        - name: liquibase-scripts
+          configMap:
+            name: liquibase-scripts
+            defaultMode: 0755
+        - name: migrations-volume
+          configMap:
+            name: database-migrations
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: database-migrations
+  namespace: flux-system
+data:
+  liquibase.properties: |
+    driver: org.postgresql.Driver
+    url: jdbc:postgresql://postgres:5432/chessdb
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    changeLogFile: changelog/db.changelog-master.yaml
+  
+  changelog/db.changelog-master.yaml: |
+    databaseChangeLog:
+      - changeSet:
+          id: 1
+          author: sspaeti
+          changes:
+            - createTable:
+                tableName: players
+                columns:
+                  - column:
+                      name: id
+                      type: int
+                      autoIncrement: true
+                      constraints:
+                        primaryKey: true
+                        nullable: false
+                  - column:
+                      name: username
+                      type: varchar(255)
+                      constraints:
+                        nullable: false
+                        unique: true
+                  - column:
+                      name: rating
+                      type: int
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: flux-system
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: flux-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:14
+        env:
+        - name: POSTGRES_DB
+          value: chessdb
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: password
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-data
+        emptyDir: {}

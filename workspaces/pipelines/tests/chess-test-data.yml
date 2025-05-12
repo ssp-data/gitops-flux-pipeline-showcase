@@ -1,0 +1,56 @@
+id: chess-test-pipeline
+namespace: test
+
+tasks:
+  - id: generate_test_data
+    type: io.kestra.plugin.scripts.python.Script
+    script: |
+      import json
+      import random
+      from datetime import datetime
+
+      # Generate 5 test players
+      players = []
+      for i in range(1, 6):
+          player = {
+              "username": f"test_player{i}",
+              "rating": random.randint(1200, 2800),
+              "test_run_id": "{{ execution.id }}"
+          }
+          players.append(player)
+      
+      # Write to outputs
+      with open("players.json", "w") as f:
+          json.dump(players, f, indent=2)
+      
+      print(f"Generated {len(players)} players for test_run_id: {{ execution.id }}")
+    outputs:
+      - players.json
+      
+  - id: validate_test_data
+    type: io.kestra.plugin.scripts.python.Script
+    script: |
+      import json
+      
+      # Load the generated test data
+      with open("{{ outputs.generate_test_data.files['players.json'] }}", "r") as f:
+          players = json.load(f)
+      
+      # Validate players data
+      assert len(players) == 5, f"Expected 5 players, got {len(players)}"
+      for player in players:
+          assert "username" in player, "Player missing username"
+          assert "rating" in player, "Player missing rating"
+      
+      print("✅ Test data validation passed!")
+      
+      # Write validation results to a file for the CI process
+      with open("validation_results.json", "w") as f:
+          json.dump({
+              "validation_passed": True,
+              "timestamp": "{{ execution.startDate }}"
+          }, f, indent=2)
+    inputs:
+      - "{{ outputs.generate_test_data.files['players.json'] }}"
+    outputs:
+      - validation_results.json

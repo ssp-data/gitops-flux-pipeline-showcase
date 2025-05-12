@@ -1,0 +1,85 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  FLUX_VERSION: 2.0.0
+  KESTRA_API_URL: http://localhost:8080
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Validate Kustomize resources
+        run: ./scripts/ci/validate-kustomize.sh
+
+      - name: Validate Kestra pipelines
+        run: ./scripts/ci/validate-kestra.sh
+
+  test-data-pipeline:
+    name: Test Kestra Data Pipeline
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Run pipeline tests
+        run: ./scripts/ci/test-pipeline.sh
+
+  liquibase-migration-test:
+    name: Test Database Migrations
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Run migration tests
+        run: ./scripts/ci/test-migrations.sh
+
+  deploy-flux:
+    name: Deploy with Flux
+    runs-on: ubuntu-latest
+    needs: [test-data-pipeline, liquibase-migration-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        
+      - name: Setup Flux CLI
+        uses: fluxcd/flux2/action@main
+      
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+      
+      - name: Setup Kubernetes Kind Cluster
+        uses: helm/kind-action@v1.5.0
+      
+      - name: Deploy to test cluster
+        run: ./scripts/ci/deploy-to-test-cluster.sh
