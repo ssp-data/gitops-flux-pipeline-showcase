@@ -7,7 +7,10 @@ echo "Testing Kestra data pipeline..."
 python -m pip install --upgrade pip
 pip install dlt pytest pytest-mock
 
-# Test directory setup
+# Testing approach for CI/CD:
+# 1. We can't run the full Kestra server in CI/CD
+# 2. Instead, we test the core pipeline logic directly
+
 cd workspaces/pipelines
 
 # Create a simple test for the chess pipeline
@@ -57,5 +60,11 @@ EOF
 
 # Run the test
 python -m pytest test_chess_pipeline.py -v
+
+# Additionally, validate the Kestra YAML syntax
+for file in $(find . -name "*.yml" -or -name "*.yaml"); do
+  echo "Validating Kestra pipeline: $file"
+  python -c "import yaml; yaml.safe_load(open('$file'))" || exit 1
+done
 
 echo "✅ Pipeline tests completed successfully"

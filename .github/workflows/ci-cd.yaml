@@ -9,7 +9,6 @@ on:
 
 env:
   FLUX_VERSION: 2.0.0
-  KESTRA_API_URL: http://localhost:8080
 
 jobs:
   lint:
@@ -26,7 +25,7 @@ jobs:
         run: ./scripts/ci/validate-kestra.sh
 
   test-data-pipeline:
-    name: Test Kestra Data Pipeline
+    name: Test Data Pipeline
     runs-on: ubuntu-latest
     needs: lint
     steps:
@@ -62,10 +61,110 @@ jobs:
       - name: Run migration tests
         run: ./scripts/ci/test-migrations.sh
 
+  build-artifact:
+    name: Build Release Artifact
+    runs-on: ubuntu-latest
+    needs: [test-data-pipeline, liquibase-migration-test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Set version
+        id: version
+        run: |
+          VERSION=$(date +%Y%m%d%H%M%S)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Package application
+        run: |
+          # Create release directory
+          mkdir -p release
+          
+          # Copy relevant files to release directory
+          cp -r workspaces/pipelines release/
+          cp -r migrations release/
+          
+          # Create release metadata
+          cat > release/release.json << EOF
+          {
+            "version": "${{ env.VERSION }}",
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "git_commit": "${{ github.sha }}"
+          }
+          EOF
+          
+          # Create archive
+          cd release && tar -czvf ../chess-pipeline-${{ env.VERSION }}.tar.gz .
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: chess-pipeline
+          path: chess-pipeline-${{ env.VERSION }}.tar.gz
+          retention-days: 5
+
+  validate-artifacts:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: chess-pipeline
+      
+      - name: Extract and validate
+        run: |
+          mkdir -p extract
+          tar -xzvf *.tar.gz -C extract
+          
+          # Validate migrations
+          cd extract/migrations
+          
+          # Install Liquibase for validation
+          mkdir -p /tmp/liquibase
+          curl -L https://github.com/liquibase/liquibase/releases/download/v4.20.0/liquibase-4.20.0.tar.gz | tar xz -C /tmp/liquibase
+          export PATH=$PATH:/tmp/liquibase
+          
+          # Install PostgreSQL JDBC Driver
+          curl -L https://jdbc.postgresql.org/download/postgresql-42.5.4.jar -o /tmp/liquibase/lib/postgresql-42.5.4.jar
+          
+          # Create test properties file
+          cat > liquibase-test.properties << EOF
+          driver: org.postgresql.Driver
+          url: jdbc:postgresql://localhost:5432/testdb
+          username: postgres
+          password: postgres
+          changeLogFile: changelog/db.changelog-master.yaml
+          EOF
+          
+          # Validate changelog
+          /tmp/liquibase/liquibase --defaults-file=liquibase-test.properties validate
+          
+          echo "✅ Release artifact validated successfully"
+
   deploy-flux:
     name: Deploy with Flux
     runs-on: ubuntu-latest
-    needs: [test-data-pipeline, liquibase-migration-test]
+    needs: validate-artifacts
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
@@ -81,5 +180,5 @@ jobs:
       - name: Setup Kubernetes Kind Cluster
         uses: helm/kind-action@v1.5.0
       
-      - name: Deploy to test cluster
+      - name: Deploy infrastructure to test cluster
         run: ./scripts/ci/deploy-to-test-cluster.sh

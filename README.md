@@ -56,17 +56,27 @@ This repository includes a GitHub Actions CI/CD workflow that automatically test
 ### CI Pipeline Features
 
 - **Linting**: Validates Kustomize resources and Kestra pipeline syntax
-- **Data Pipeline Testing**: Tests the data pipelines with sample data
-- **Database Schema Testing**: Tests Liquibase migrations
-- **Deployment Testing**: Deploys to a test cluster using Flux
+- **Data Pipeline Testing**: Tests the data pipeline logic directly using pytest
+- **Database Schema Testing**: Validates Liquibase migrations
+- **Artifact Building**: Creates versioned release artifacts
+- **Deployment Testing**: Deploys infrastructure to a test cluster using Flux
 
 ### Workflow Diagram
 
 ```
-[Code Push] → [Lint] → [Test Pipelines] → [Test Migrations] → [Deploy]
-                                                                  ↑
-                               (Only runs on main branch pushes) ─┘
+[Code Push] → [Lint] → [Test Code] → [Test Migrations] → [Build Artifact] → [Validate Artifact] → [Deploy]
+                                                                                                       ↑
+                                                      (Only runs on main branch pushes) ───────────────┘
 ```
+
+### Testing Approach
+
+For CI/CD testing without a full Kubernetes environment:
+
+1. **Data Pipeline Tests**: Tests the pipeline logic directly with pytest and mocks, not through Kestra
+2. **Liquibase Tests**: Runs against a PostgreSQL service container that's spun up for the tests
+3. **Artifact Building**: Creates a versioned artifact with code, migrations and metadata
+4. **Infrastructure Testing**: Uses Kind to create a temporary Kubernetes cluster for infrastructure validation
 
 ## Usage
 
@@ -101,3 +111,13 @@ The example includes a simple data pipeline that:
 1. Fetches chess player data from a public API
 2. Processes the data with DLT
 3. Outputs the results to a database
+
+## Release Process
+
+The CI/CD workflow:
+
+1. Tests all components separately
+2. Builds a versioned artifact (e.g., chess-pipeline-20250512123045.tar.gz)
+3. Validates the artifact's contents 
+4. Deploys the infrastructure using Flux in a test environment
+5. For production, you would manually promote tested releases
