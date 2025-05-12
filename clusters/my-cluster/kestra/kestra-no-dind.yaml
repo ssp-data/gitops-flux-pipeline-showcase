@@ -1,0 +1,40 @@
+# Alternative configuration with DinD disabled
+# To use this configuration, modify the kestra-helm-release.yaml file
+# and replace the 'values' section with the content below
+
+values:
+  # Global security context for running containers
+  securityContext:
+    privileged: false
+    
+  deployments:
+    standalone:
+      enabled: true
+    webserver:
+      enabled: false
+    executor:
+      enabled: false
+    indexer:
+      enabled: false
+    scheduler:
+      enabled: false
+    worker:
+      enabled: false
+      
+  postgresql:
+    enabled: true
+  minio:
+    enabled: true
+  
+  # Disable Docker in Docker
+  dind:
+    enabled: false
+    
+  # Configure plugin defaults to use Kubernetes task runner
+  pluginDefaults:
+    - type: io.kestra.plugin.scripts
+      forced: true
+      values:
+        taskRunner:
+          type: io.kestra.plugin.ee.kubernetes.runner.Kubernetes
+          # Add Kubernetes runner configuration here if needed
