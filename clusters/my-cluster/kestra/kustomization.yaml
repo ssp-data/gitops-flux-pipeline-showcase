@@ -4,7 +4,3 @@ namespace: flux-system
 resources:
   - kestra-helm-repository.yaml
   - kestra-helm-release.yaml
-configMapGenerator:
-  - name: kestra-values
-    files:
-      - values.yaml=kestra-values.yaml

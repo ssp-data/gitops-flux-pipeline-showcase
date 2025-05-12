@@ -12,18 +12,30 @@ spec:
       version: '>0.0.0'
       sourceRef:
         kind: HelmRepository
-        name: kestra
+        name: kestra-repository
         namespace: flux-system
-  valuesFrom:
-    - kind: ConfigMap
-      name: kestra-values
-      valuesKey: values.yaml
-  # You can also specify values directly here if you prefer
-  # values:
-  #   deployments:
-  #     standalone:
-  #       enabled: true
-  #   postgresql:
-  #     enabled: true
-  #   minio:
-  #     enabled: true
+  values:
+    deployments:
+      standalone:
+        enabled: true
+      webserver:
+        enabled: false
+      executor:
+        enabled: false
+      indexer:
+        enabled: false
+      scheduler:
+        enabled: false
+      worker:
+        enabled: false
+    postgresql:
+      enabled: true
+    minio:
+      enabled: true
+    dind:
+      enabled: true
+      image:
+        image: docker
+        tag: dind
+      args:
+        - --log-level=fatal
