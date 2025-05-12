@@ -40,5 +40,16 @@ get-helmreleases: ## List all HelmReleases
 get-sources: ## List all sources (Git, Helm)
 	flux get sources all -A
 
+watch:
+	flux get kustomizations --watch
+
 port-forward-kestra: ## Port forward Kestra UI to localhost:8080
-	kubectl port-forward svc/kestra 8080:8080
+	kubectl port-forward svc/kestra-service 8080:8080 -n flux-system
+
+flux-boostrap: # check on https://fluxcd.io/flux/get-started/
+	flux bootstrap github \
+  --owner=$GITHUB_USER \
+  --repository=flux-infra-example \
+  --branch=main \
+  --path=./clusters/my-cluster \
+  --personal
