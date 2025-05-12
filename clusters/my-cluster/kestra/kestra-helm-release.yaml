@@ -17,7 +17,8 @@ spec:
   values:
     # Global security context for running containers
     securityContext:
-      privileged: false
+      runAsUser: 0
+      runAsGroup: 0
 
     deployments:
       standalone:
@@ -45,6 +46,3 @@ spec:
         runAsUser: 0
         runAsGroup: 0
 
-    securityContext:
-      runAsUser: 0
-      runAsGroup: 0
