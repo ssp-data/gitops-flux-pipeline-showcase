@@ -45,7 +45,8 @@ For CI/CD testing without a full Kubernetes environment:
 The CI/CD workflow:
 
 1. Tests all components separately
-2. Builds a versioned artifact (e.g., chess-pipeline-20250512123045.tar.gz)
+2. Builds a versioned artifact (e.g., chess-pipeline-20250512123045.tar.gz) (see point 2.)
+![image](images/artifacts.png)
 3. Validates the artifact's contents 
 4. Deploys the infrastructure using Flux in a test environment
 5. For production, you would manually promote tested releases
@@ -112,27 +113,14 @@ The example includes a simple data pipeline that:
 #### Adding a New Pipeline
 
 1. **Create a new YAML file** in the `workspaces/pipelines` directory:
-   ```yaml
-   # workspaces/pipelines/new-pipeline.yml
-   id: new_pipeline
-   namespace: chess
-   
-   tasks:
-     - id: task1
-       type: io.kestra.core.tasks.log.Log
-       message: "Hello from Kestra pipeline"
-   ```
-
 2. **Test your pipeline**:
    - The CI will automatically validate the YAML syntax
    - For local testing, upload it to your Kestra UI and execute it
-
 3. **Add Python code** if needed:
    - Place Python scripts in the `workspaces/pipelines/dlt` directory 
    - Use underscores in filenames instead of hyphens (e.g., `my_script.py` not `my-script.py`)
    - Create unit tests in the `workspaces/pipelines/tests` directory
    - Run tests locally with: `cd workspaces/pipelines && pytest tests/`
-
 4. **Commit and push your changes**:
    ```bash
    git add workspaces/pipelines/new-pipeline.yml
