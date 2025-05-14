@@ -5,7 +5,7 @@ This repository contains a GitOps infrastructure setup using Flux CD to manage K
 
 > 📝 **Also find general Best Practices for Deployment Organization**
 >
-> On [deployment-blueprint-gitops](https://github.com/ssp-data/deployment-blueprint-gitops) you'll find  best practices for deploying open data stacks on Kubernetes using GitOps principles, focusing on efficient patterns that work well with modern DevOps workflows. that blueprint repo is not a working copy, but has insights on how to structure a enterprise scale repo, where as this GitOps repo here is more focused on working example.
+> On [kubernetes-gitops-deployment-blueprint](https://github.com/ssp-data/kubernetes-gitops-deployment-blueprint) you'll find  best practices for deploying open data stacks on Kubernetes using GitOps principles, focusing on efficient patterns that work well with modern DevOps workflows. that blueprint repo is not a working copy, but has insights on how to structure a enterprise scale repo, where as this GitOps repo here is more focused on working example.
 
 
 ## Overview
