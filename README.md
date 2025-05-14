@@ -17,44 +17,6 @@ This infrastructure repository demonstrates how to use Flux CD for GitOps-driven
 - Database migrations with Liquibase
 - CI/CD pipelines with GitHub Actions
 
-## Getting Started
-
-### Prerequisites
-
-- Kubernetes cluster
-- Flux CLI installed
-- `kubectl` configured
-
-### Bootstrapping Flux
-
-To bootstrap Flux on your cluster:
-
-```bash
-export GITHUB_USER=<your-github-username>
-make flux-bootstrap
-```
-
-## Directory Structure
-
-```
-clusters/             # Kubernetes manifests managed by Flux
-  └── my-cluster/     # Cluster-specific configuration
-      ├── flux-system/ # Flux components
-      ├── kestra/     # Kestra deployment 
-      └── migrations/ # Database migrations
-
-workspaces/           # Application code and pipelines
-  └── pipelines/      # Kestra pipeline definitions
-      ├── dlt/        # Python data pipeline code
-      └── tests/      # Test pipelines
-
-scripts/              # CI/CD and utility scripts
-  └── ci/             # CI pipeline scripts
-
-migrations/           # Local migration files
-  └── changelog/      # Liquibase changelog definitions
-```
-
 ## CI/CD Pipeline on GitHub with GitHub Actions
 
 This repository includes a [GitHub Actions CI/CD workflow](.github/workflows/ci-cd.yaml) that automatically tests and deploys changes. Check out [recent runs](https://github.com/ssp-data/gitops-flux-pipeline-showcase/actions) to get an overview what happens. Scripts that run can be found in [`scripts/ci/`](scripts/ci).
@@ -73,8 +35,8 @@ This repository includes a [GitHub Actions CI/CD workflow](.github/workflows/ci-
 
 ```
 [Code Push] → [Lint] → [Test Code] → [Test Migrations] → [Build Artifact] → [Validate Artifact] → [Deploy]
-                                                                                                       ↑
-                                                      (Only runs on main branch pushes) ───────────────┘
+                                                                                                   ↑
+                                                  (Only runs on main branch pushes) ───────────────┘
 ```
 
 ### Testing Approach
@@ -85,126 +47,6 @@ For CI/CD testing without a full Kubernetes environment:
 2. **Liquibase Tests**: Runs against a PostgreSQL service container that's spun up for the tests
 3. **Artifact Building**: Creates a versioned artifact with code, migrations and metadata
 4. **Infrastructure Testing**: Uses Kind to create a temporary Kubernetes cluster for infrastructure validation
-
-## Usage
-
-The repository includes a [Makefile](Makefile) with common commands to run Flux reconcile, status or port forwards when run locally.
-
-## Database Migrations
-
-Database migrations are managed with Liquibase:
-
-1. Simple schema with players table
-2. Migrations applied automatically via Kubernetes job
-3. Changes tracked in version control
-
-### Adding a New Database Migration
-
-To add a new database migration:
-
-1. **Create a new changeset** in the master changelog file or add a new changelog file:
-   ```yaml
-   # In migrations/changelog/db.changelog-master.yaml
-   databaseChangeLog:
-     - changeSet:
-         id: 1
-         author: sspaeti
-         changes:
-           - createTable:
-               # Existing table definition...
-
-     # Add your new changeset
-     - changeSet:
-         id: 2
-         author: your-name
-         changes:
-           - addColumn:
-               tableName: players
-               columns:
-                 - column:
-                     name: new_column
-                     type: varchar(255)
-   ```
-
-2. **Test your migration locally**:
-   ```bash
-   # Install Liquibase if needed
-   # Run the migration against your development database
-   cd migrations
-   liquibase update
-   ```
-
-3. **Commit and push your changes**:
-   ```bash
-   git add migrations/changelog/db.changelog-master.yaml
-   git commit -m "Add new_column to players table"
-   git push origin main
-   ```
-
-4. **CI will automatically test your migration** against a test database
-   - The job will fail if there are any issues with your migration script
-   - You can view the results in the GitHub Actions tab
-
-Once approved and merged, Flux will automatically apply your database changes by running the Liquibase migration job in the cluster.
-
-## Kestra Data Pipelines
-
-The example includes a simple data pipeline that:
-
-1. Fetches chess player data from a public API
-2. Processes the data with DLT
-3. Outputs the results to a database
-
-### Working with Kestra Pipelines
-
-#### Running Pipelines Locally
-
-1. **Access the Kestra UI**:
-   ```bash
-   make port-forward-kestra
-   ```
-   Then open `http://localhost:8082` in your browser
-
-2. **Upload a Pipeline**:
-   - In the Kestra UI, navigate to Flows → Create → Upload YAML
-   - Select your pipeline YAML file from the `workspaces/pipelines` directory
-   - Click Upload
-
-3. **Execute a Pipeline**:
-   - Click on your pipeline in the Flows list
-   - Click "Execute" button in the top right
-   - Monitor the execution progress in the UI
-
-#### Adding a New Pipeline
-
-1. **Create a new YAML file** in the `workspaces/pipelines` directory:
-   ```yaml
-   # workspaces/pipelines/new-pipeline.yml
-   id: new_pipeline
-   namespace: chess
-   
-   tasks:
-     - id: task1
-       type: io.kestra.core.tasks.log.Log
-       message: "Hello from Kestra pipeline"
-   ```
-
-2. **Test your pipeline**:
-   - The CI will automatically validate the YAML syntax
-   - For local testing, upload it to your Kestra UI and execute it
-
-3. **Add Python code** if needed:
-   - Place Python scripts in the `workspaces/pipelines/dlt` directory 
-   - Use underscores in filenames instead of hyphens (e.g., `my_script.py` not `my-script.py`)
-   - Create unit tests in the `workspaces/pipelines/tests` directory
-   - Run tests locally with: `cd workspaces/pipelines && pytest tests/`
-
-4. **Commit and push your changes**:
-   ```bash
-   git add workspaces/pipelines/new-pipeline.yml
-   git commit -m "Add new data pipeline"
-   git push origin main
-   ```
 
 ## Release Process
 
@@ -243,3 +85,163 @@ To create a new release that can be tested in CI:
    - If the "validate kustomize resource" step fails, ensure your kustomization files are properly structured
    - Remember all paths in kustomization files should be relative to the file location
    - Use the `--load-restrictor=LoadRestrictionsNone` flag when validating external references
+
+## Directory Structure
+
+```
+clusters/             # Kubernetes manifests managed by Flux
+  └── my-cluster/     # Cluster-specific configuration
+      ├── flux-system/ # Flux components
+      ├── kestra/     # Kestra deployment 
+      └── migrations/ # Database migrations
+
+workspaces/           # Application code and pipelines
+  └── pipelines/      # Kestra pipeline definitions
+      ├── dlt/        # Python data pipeline code
+      └── tests/      # Test pipelines
+
+scripts/              # CI/CD and utility scripts
+  └── ci/             # CI pipeline scripts
+
+migrations/           # Local migration files
+  └── changelog/      # Liquibase changelog definitions
+```
+
+## Kestra Data Pipelines
+
+The example includes a simple data pipeline that:
+
+1. Fetches chess player data from a public API
+2. Processes the data with DLT
+3. Outputs the results to a database
+
+### Working with Kestra Pipelines
+
+#### Adding a New Pipeline
+
+1. **Create a new YAML file** in the `workspaces/pipelines` directory:
+   ```yaml
+   # workspaces/pipelines/new-pipeline.yml
+   id: new_pipeline
+   namespace: chess
+   
+   tasks:
+     - id: task1
+       type: io.kestra.core.tasks.log.Log
+       message: "Hello from Kestra pipeline"
+   ```
+
+2. **Test your pipeline**:
+   - The CI will automatically validate the YAML syntax
+   - For local testing, upload it to your Kestra UI and execute it
+
+3. **Add Python code** if needed:
+   - Place Python scripts in the `workspaces/pipelines/dlt` directory 
+   - Use underscores in filenames instead of hyphens (e.g., `my_script.py` not `my-script.py`)
+   - Create unit tests in the `workspaces/pipelines/tests` directory
+   - Run tests locally with: `cd workspaces/pipelines && pytest tests/`
+
+4. **Commit and push your changes**:
+   ```bash
+   git add workspaces/pipelines/new-pipeline.yml
+   git commit -m "Add new data pipeline"
+   git push origin main
+   ```
+
+## Database Migrations
+
+Database migrations are managed with Liquibase:
+
+1. Simple schema with players table
+2. Migrations applied automatically via Kubernetes job
+3. Changes tracked in version control
+
+### Adding a New Database Migration
+
+To add a new database migration:
+
+1. **Create a new changeset** in the master changelog file or add a new changelog file:
+   ```yaml
+   # In migrations/changelog/db.changelog-master.yaml
+   databaseChangeLog:
+     - changeSet:
+         id: 1
+         author: sspaeti
+         changes:
+           - createTable:
+               # Existing table definition...
+
+     # Add your new changeset
+     - changeSet:
+         id: 2
+         author: your-name
+         changes:
+           - addColumn:
+               tableName: players
+               columns:
+                 - column:
+                     name: new_column
+                     type: varchar(255)
+   ```
+
+2. **Commit and push your changes**:
+   ```bash
+   git add migrations/changelog/db.changelog-master.yaml
+   git commit -m "Add new_column to players table"
+   git push origin main
+   ```
+
+3. **CI will automatically test your migration** against a test database
+   - The job will fail if there are any issues with your migration script
+   - You can view the results in the GitHub Actions tab
+
+Once approved and merged, Flux will automatically apply your database changes by running the Liquibase migration job in the cluster.
+
+## Local Development and Testing
+
+### Prerequisites
+
+- Kubernetes cluster
+- Flux CLI installed
+- `kubectl` configured
+
+### Bootstrapping Flux Locally
+
+To bootstrap Flux on your local cluster:
+
+```bash
+export GITHUB_USER=<your-github-username>
+make flux-bootstrap
+```
+
+### Local Makefile Commands
+
+The repository includes a [Makefile](Makefile) with common commands to run Flux reconcile, status or port forwards when run locally.
+
+#### Running Pipelines Locally
+
+1. **Access the Kestra UI**:
+   ```bash
+   make port-forward-kestra
+   ```
+   Then open `http://localhost:8082` in your browser
+
+2. **Upload a Pipeline**:
+   - In the Kestra UI, navigate to Flows → Create → Upload YAML
+   - Select your pipeline YAML file from the `workspaces/pipelines` directory
+   - Click Upload
+
+3. **Execute a Pipeline**:
+   - Click on your pipeline in the Flows list
+   - Click "Execute" button in the top right
+   - Monitor the execution progress in the UI
+
+#### Testing Database Migrations Locally
+
+To test your migration locally:
+```bash
+# Install Liquibase if needed
+# Run the migration against your development database
+cd migrations
+liquibase update
+```
