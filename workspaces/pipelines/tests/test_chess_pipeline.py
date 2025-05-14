@@ -7,21 +7,8 @@ import os
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(os.path.dirname(script_dir), 'dlt'))
 
-# Try to import the module
-try:
-    import dlt_chess_snowflake as chess_module
-except ImportError:
-    # If it fails, try to create a properly named module
-    dlt_dir = os.path.join(os.path.dirname(script_dir), 'dlt')
-    src_path = os.path.join(dlt_dir, 'dlt-chess-snowflake.py')
-    dst_path = os.path.join(dlt_dir, 'dlt_chess_snowflake.py')
-    
-    if os.path.exists(src_path) and not os.path.exists(dst_path):
-        with open(src_path, 'r') as src:
-            with open(dst_path, 'w') as dst:
-                dst.write(src.read())
-    
-    import dlt_chess_snowflake as chess_module
+# Import the module (using standard Python naming convention with underscores)
+import dlt_chess_snowflake as chess_module
 
 @pytest.fixture
 def mock_requests_get():

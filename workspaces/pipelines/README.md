@@ -83,7 +83,7 @@ export DESTINATION__SNOWFLAKE_PASSWORD=your-password
 
 # Test dlt script
 cd pipelines/dlt
-python dlt-chess-snowflake.py
+python dlt_chess_snowflake.py
 
 # Validate Kestra workflow
 kestra flow validate ../chess-kestra-dlt.yml

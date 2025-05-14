@@ -26,4 +26,4 @@ tasks:
       - export DESTINATION__SNOWFLAKE_HOST={{ secret('DESTINATION__SNOWFLAKE_HOST') }}
       - export DESTINATION__SNOWFLAKE_PASSWORD={{ secret('DESTINATION__SNOWFLAKE_PASSWORD') }}
     commands:
-      - python dlt/dlt-chess-snowflake.py
+      - python dlt/dlt_chess_snowflake.py

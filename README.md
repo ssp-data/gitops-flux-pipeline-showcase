@@ -200,7 +200,8 @@ The example includes a simple data pipeline that:
    - For local testing, upload it to your Kestra UI and execute it
 
 3. **Add Python code** if needed:
-   - Place Python scripts in the `workspaces/pipelines/dlt` directory
+   - Place Python scripts in the `workspaces/pipelines/dlt` directory 
+   - Use underscores in filenames instead of hyphens (e.g., `my_script.py` not `my-script.py`)
    - Create unit tests in the `workspaces/pipelines/tests` directory
    - Run tests locally with: `cd workspaces/pipelines && pytest tests/`
 

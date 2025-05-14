@@ -28,11 +28,6 @@ else
   pip install dlt pytest pytest-mock
 fi
 
-# Ensure the Python module is importable (use correct naming)
-if [ -f "workspaces/pipelines/dlt/dlt-chess-snowflake.py" ] && [ ! -f "workspaces/pipelines/dlt/dlt_chess_snowflake.py" ]; then
-  echo "Creating importable module name..."
-  cp "workspaces/pipelines/dlt/dlt-chess-snowflake.py" "workspaces/pipelines/dlt/dlt_chess_snowflake.py"
-fi
 
 # Run the test
 echo "Running pipeline tests..."
