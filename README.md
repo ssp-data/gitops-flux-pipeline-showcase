@@ -31,14 +31,6 @@ This repository includes a [GitHub Actions CI/CD workflow](.github/workflows/ci-
 - **Artifact Building**: Creates versioned release artifacts
 - **Deployment Testing**: Deploys infrastructure to a test cluster using Flux
 
-### Workflow Diagram
-
-```
-[Code Push] → [Lint] → [Test Code] → [Test Migrations] → [Build Artifact] → [Validate Artifact] → [Deploy]
-                                                                                                   ↑
-                                                  (Only runs on main branch pushes) ───────────────┘
-```
-
 ### Testing Approach
 
 For CI/CD testing without a full Kubernetes environment:
