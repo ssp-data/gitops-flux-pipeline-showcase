@@ -104,6 +104,55 @@ Database migrations are managed with Liquibase:
 2. Migrations applied automatically via Kubernetes job
 3. Changes tracked in version control
 
+### Adding a New Database Migration
+
+To add a new database migration:
+
+1. **Create a new changeset** in the master changelog file or add a new changelog file:
+   ```yaml
+   # In migrations/changelog/db.changelog-master.yaml
+   databaseChangeLog:
+     - changeSet:
+         id: 1
+         author: sspaeti
+         changes:
+           - createTable:
+               # Existing table definition...
+
+     # Add your new changeset
+     - changeSet:
+         id: 2
+         author: your-name
+         changes:
+           - addColumn:
+               tableName: players
+               columns:
+                 - column:
+                     name: new_column
+                     type: varchar(255)
+   ```
+
+2. **Test your migration locally**:
+   ```bash
+   # Install Liquibase if needed
+   # Run the migration against your development database
+   cd migrations
+   liquibase update
+   ```
+
+3. **Commit and push your changes**:
+   ```bash
+   git add migrations/changelog/db.changelog-master.yaml
+   git commit -m "Add new_column to players table"
+   git push origin main
+   ```
+
+4. **CI will automatically test your migration** against a test database
+   - The job will fail if there are any issues with your migration script
+   - You can view the results in the GitHub Actions tab
+
+Once approved and merged, Flux will automatically apply your database changes by running the Liquibase migration job in the cluster.
+
 ## Kestra Data Pipelines
 
 The example includes a simple data pipeline that:
@@ -111,6 +160,55 @@ The example includes a simple data pipeline that:
 1. Fetches chess player data from a public API
 2. Processes the data with DLT
 3. Outputs the results to a database
+
+### Working with Kestra Pipelines
+
+#### Running Pipelines Locally
+
+1. **Access the Kestra UI**:
+   ```bash
+   make port-forward-kestra
+   ```
+   Then open `http://localhost:8082` in your browser
+
+2. **Upload a Pipeline**:
+   - In the Kestra UI, navigate to Flows → Create → Upload YAML
+   - Select your pipeline YAML file from the `workspaces/pipelines` directory
+   - Click Upload
+
+3. **Execute a Pipeline**:
+   - Click on your pipeline in the Flows list
+   - Click "Execute" button in the top right
+   - Monitor the execution progress in the UI
+
+#### Adding a New Pipeline
+
+1. **Create a new YAML file** in the `workspaces/pipelines` directory:
+   ```yaml
+   # workspaces/pipelines/new-pipeline.yml
+   id: new_pipeline
+   namespace: chess
+   
+   tasks:
+     - id: task1
+       type: io.kestra.core.tasks.log.Log
+       message: "Hello from Kestra pipeline"
+   ```
+
+2. **Test your pipeline**:
+   - The CI will automatically validate the YAML syntax
+   - For local testing, upload it to your Kestra UI and execute it
+
+3. **Add Python code** if needed:
+   - Place Python scripts in the `workspaces/pipelines/dlt` directory
+   - Create unit tests in the `workspaces/pipelines/tests` directory
+
+4. **Commit and push your changes**:
+   ```bash
+   git add workspaces/pipelines/new-pipeline.yml
+   git commit -m "Add new data pipeline"
+   git push origin main
+   ```
 
 ## Release Process
 
@@ -121,3 +219,31 @@ The CI/CD workflow:
 3. Validates the artifact's contents 
 4. Deploys the infrastructure using Flux in a test environment
 5. For production, you would manually promote tested releases
+
+### Creating a Release for CI Testing
+
+To create a new release that can be tested in CI:
+
+1. **Make your changes** to the codebase (pipelines, migrations, etc.)
+
+2. **Commit and push your changes** to GitHub:
+   ```bash
+   git add .
+   git commit -m "Your descriptive commit message"
+   git push origin main
+   ```
+
+3. **Monitor the CI pipeline** in GitHub Actions:
+   - The pipeline will automatically run when you push to main
+   - It will validate kustomize resources, test the data pipeline, and test migrations
+   - If these steps pass, it will build an artifact and deploy to a test cluster
+
+4. **CI Artifacts**:
+   - The pipeline automatically creates a versioned artifact containing your pipeline code and migrations
+   - Artifacts are named using timestamps (e.g., `chess-pipeline-20250514120000.tar.gz`)
+   - These artifacts can be downloaded from GitHub Actions for manual testing or deployment
+
+5. **Fix CI Issues**:
+   - If the "validate kustomize resource" step fails, ensure your kustomization files are properly structured
+   - Remember all paths in kustomization files should be relative to the file location
+   - Use the `--load-restrictor=LoadRestrictionsNone` flag when validating external references

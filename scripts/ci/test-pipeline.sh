@@ -7,27 +7,24 @@ echo "Testing Kestra data pipeline..."
 python -m pip install --upgrade pip
 pip install dlt pytest pytest-mock
 
-# Testing approach for CI/CD:
-# 1. We can't run the full Kestra server in CI/CD
-# 2. Instead, we test the core pipeline logic directly
+# Create test directory if it doesn't exist
+mkdir -p workspaces/pipelines/tests
 
-cd workspaces/pipelines
-
-# Create a simple test for the chess pipeline
-cat > test_chess_pipeline.py << EOF
+# Create the test file for the chess pipeline
+cat > workspaces/pipelines/tests/test_chess_pipeline.py << EOF
 import pytest
 from unittest.mock import patch, MagicMock
-import json
 import sys
 import os
 
 # Add the directory to path to import the module
-sys.path.append(os.path.abspath('./dlt'))
+sys.path.append(os.path.abspath('workspaces/pipelines/dlt'))
 
-# Rename dlt-chess-snowflake.py to dlt_chess_snowflake.py for import
-if not os.path.exists('./dlt/dlt_chess_snowflake.py'):
-    with open('./dlt/dlt-chess-snowflake.py', 'r') as src:
-        with open('./dlt/dlt_chess_snowflake.py', 'w') as dst:
+# Create importable module name
+MODULE_PATH = 'workspaces/pipelines/dlt/dlt_chess_snowflake.py'
+if not os.path.exists(MODULE_PATH):
+    with open('workspaces/pipelines/dlt/dlt-chess-snowflake.py', 'r') as src:
+        with open(MODULE_PATH, 'w') as dst:
             dst.write(src.read())
 
 import dlt_chess_snowflake as chess_module
@@ -59,11 +56,12 @@ def test_chess_players_online_status(mock_requests_get):
 EOF
 
 # Run the test
-python -m pytest test_chess_pipeline.py -v
+python -m pytest workspaces/pipelines/tests/test_chess_pipeline.py -v
 
-# Additionally, validate the Kestra YAML syntax
-for file in $(find . -name "*.yml" -or -name "*.yaml"); do
-  echo "Validating Kestra pipeline: $file"
+# Validate the Kestra YAML syntax
+echo "Validating Kestra YAML files..."
+for file in $(find workspaces/pipelines -name "*.yml" -or -name "*.yaml"); do
+  echo "Validating: $file"
   python -c "import yaml; yaml.safe_load(open('$file'))" || exit 1
 done
 
