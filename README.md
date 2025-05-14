@@ -1,6 +1,8 @@
-# Flux Infrastructure Example
+# GitOps Infrastructure with Flux CD, Kestra, and CI/CD Pipelines
 
-This repository contains a GitOps infrastructure setup using Flux CD to manage Kubernetes applications and resources.
+
+
+This repository contains a GitOps infrastructure setup using Flux CD to manage Kubernetes applications and resources. It's a GitOps infrastructure example using Kestra workflows, and Liquibase migrations with complete CI/CD pipeline implementation.
 
 ## Overview
 
