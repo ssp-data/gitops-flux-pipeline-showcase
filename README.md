@@ -177,6 +177,10 @@ To add a new database migration:
 
 Once approved and merged, Flux will automatically apply your database changes by running the Liquibase migration job in the cluster.
 
+## Other Deployment Variants
+
+- Flux with Azure deployment tutorial: [Tutorial: Deploy applications using GitOps with Flux v2](https://learn.microsoft.com/en-us/azure/azure-arc/kubernetes/tutorial-use-gitops-flux2?tabs=azure-cli)
+
 ## Local Development and Testing
 
 ### Prerequisites
@@ -225,3 +229,5 @@ To test your migration locally:
 cd migrations
 liquibase update
 ```
+
+
