@@ -202,6 +202,7 @@ The example includes a simple data pipeline that:
 3. **Add Python code** if needed:
    - Place Python scripts in the `workspaces/pipelines/dlt` directory
    - Create unit tests in the `workspaces/pipelines/tests` directory
+   - Run tests locally with: `cd workspaces/pipelines && pytest tests/`
 
 4. **Commit and push your changes**:
    ```bash
