@@ -55,9 +55,11 @@ migrations/           # Local migration files
   └── changelog/      # Liquibase changelog definitions
 ```
 
-## CI/CD Pipeline
+## CI/CD Pipeline on GitHub with GitHub Actions
 
-This repository includes a GitHub Actions CI/CD workflow that automatically tests and deploys changes:
+This repository includes a [GitHub Actions CI/CD workflow](.github/workflows/ci-cd.yaml) that automatically tests and deploys changes. Check out [recent runs](https://github.com/ssp-data/gitops-flux-pipeline-showcase/actions) to get an overview what happens. Scripts that run can be found in [`scripts/ci/`](scripts/ci).
+
+![image](images/gh-actions-lineage.png)
 
 ### CI Pipeline Features
 
@@ -86,21 +88,7 @@ For CI/CD testing without a full Kubernetes environment:
 
 ## Usage
 
-The repository includes a Makefile with common commands:
-
-```bash
-# Display help for available commands
-make help
-
-# Reconcile all resources
-make reconcile-all
-
-# View resource status
-make status
-
-# Access Kestra UI
-make port-forward-kestra
-```
+The repository includes a [Makefile](Makefile) with common commands to run Flux reconcile, status or port forwards when run locally.
 
 ## Database Migrations
 
